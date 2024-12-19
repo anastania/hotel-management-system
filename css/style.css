@@ -1,0 +1,82 @@
+/* General Styles */
+body {
+    font-family: 'Arial', sans-serif;
+    line-height: 1.6;
+    background-color: #f8f9fa;
+}
+
+/* Header Styles */
+.navbar {
+    box-shadow: 0 2px 4px rgba(0,0,0,.1);
+}
+
+.navbar-brand {
+    font-weight: bold;
+}
+
+/* Hotel Card Styles */
+.hotel-card {
+    transition: transform 0.3s ease;
+    margin-bottom: 20px;
+}
+
+.hotel-card:hover {
+    transform: translateY(-5px);
+}
+
+.hotel-card img {
+    height: 200px;
+    object-fit: cover;
+}
+
+/* Search Form Styles */
+.search-form {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0,0,0,.1);
+}
+
+/* Reservation Form Styles */
+.reservation-form {
+    background: white;
+    padding: 25px;
+    border-radius: 10px;
+    box-shadow: 0 0 15px rgba(0,0,0,.1);
+}
+
+/* Footer Styles */
+footer {
+    background: #343a40;
+    color: white;
+    padding: 20px 0;
+    margin-top: 50px;
+}
+
+/* Admin Dashboard Styles */
+.dashboard-card {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    box-shadow: 0 0 10px rgba(0,0,0,.1);
+}
+
+.stats-card {
+    text-align: center;
+    padding: 20px;
+    background: linear-gradient(45deg, #007bff, #0056b3);
+    color: white;
+    border-radius: 10px;
+}
+
+/* Responsive Styles */
+@media (max-width: 768px) {
+    .hotel-card img {
+        height: 150px;
+    }
+    
+    .search-form {
+        margin-bottom: 20px;
+    }
+}

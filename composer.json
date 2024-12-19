@@ -1,0 +1,22 @@
+{
+    "name": "hotel-reservation/system",
+    "description": "Système de gestion des réservations d'hôtel",
+    "type": "project",
+    "require": {
+        "php": ">=7.4",
+        "paypal/rest-api-sdk-php": "^1.14",
+        "phpmailer/phpmailer": "^6.8"
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Hotel Reservation System",
+            "email": "admin@hotel-reservation.com"
+        }
+    ],
+    "minimum-stability": "stable"
+}

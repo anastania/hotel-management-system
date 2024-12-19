@@ -1,0 +1,199 @@
+/* Admin Dashboard Styles */
+:root {
+    /* Palette de couleurs */
+    --fresh-cream: #F4EFEB;
+    --forest-green: #5E6C5B;
+    --cloud-white: #FEFCF6;
+    --sky-blue: #D6E0E2;
+    --storm-cloud: #686867;
+    --midnight: #162A2C;
+}
+
+/* Admin Header */
+.admin-header {
+    background-color: var(--cloud-white);
+    border-bottom: 1px solid var(--sky-blue);
+    padding: 1rem 0;
+}
+
+.admin-header .navbar-brand {
+    color: var(--midnight);
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.admin-header .nav-link {
+    color: var(--storm-cloud);
+    padding: 0.5rem 1rem;
+    transition: color 0.3s ease;
+}
+
+.admin-header .nav-link:hover {
+    color: var(--midnight);
+}
+
+.admin-header .dropdown-menu {
+    background-color: var(--cloud-white);
+    border: none;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.admin-header .dropdown-item {
+    color: var(--storm-cloud);
+    padding: 0.5rem 1rem;
+}
+
+.admin-header .dropdown-item:hover {
+    background-color: var(--fresh-cream);
+    color: var(--midnight);
+}
+
+/* Admin Sidebar */
+.admin-sidebar {
+    background-color: var(--cloud-white);
+    border-right: 1px solid var(--sky-blue);
+    min-height: 100vh;
+    padding-top: 2rem;
+}
+
+.admin-sidebar .nav-link {
+    color: var(--storm-cloud);
+    padding: 0.75rem 1.5rem;
+    border-radius: 4px;
+    margin: 0.2rem 1rem;
+    transition: all 0.3s ease;
+}
+
+.admin-sidebar .nav-link:hover,
+.admin-sidebar .nav-link.active {
+    background-color: var(--fresh-cream);
+    color: var(--midnight);
+}
+
+.admin-sidebar .nav-link i {
+    width: 20px;
+    margin-right: 10px;
+    color: var(--forest-green);
+}
+
+/* Dashboard Cards */
+.dashboard-card {
+    background-color: var(--cloud-white);
+    border: none;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease;
+}
+
+.dashboard-card:hover {
+    transform: translateY(-5px);
+}
+
+.dashboard-card.bg-primary {
+    background-color: var(--forest-green) !important;
+}
+
+.dashboard-card.bg-success {
+    background-color: var(--forest-green) !important;
+}
+
+.dashboard-card.bg-info {
+    background-color: var(--sky-blue) !important;
+}
+
+.dashboard-card.bg-warning {
+    background-color: var(--storm-cloud) !important;
+}
+
+/* Tables */
+.admin-table {
+    background-color: var(--cloud-white);
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.admin-table thead th {
+    background-color: var(--midnight);
+    color: var(--cloud-white);
+    border: none;
+    padding: 1rem;
+}
+
+.admin-table tbody tr:hover {
+    background-color: var(--fresh-cream);
+}
+
+/* Buttons */
+.btn-admin-primary {
+    background-color: var(--forest-green);
+    border-color: var(--forest-green);
+    color: var(--cloud-white);
+}
+
+.btn-admin-primary:hover {
+    background-color: var(--midnight);
+    border-color: var(--midnight);
+    color: var(--cloud-white);
+}
+
+/* Forms */
+.admin-form .form-control {
+    border: 2px solid var(--sky-blue);
+    border-radius: 4px;
+    padding: 0.75rem;
+    background-color: var(--cloud-white);
+}
+
+.admin-form .form-control:focus {
+    border-color: var(--forest-green);
+    box-shadow: 0 0 0 0.2rem rgba(94, 108, 91, 0.25);
+}
+
+.admin-form label {
+    color: var(--midnight);
+    font-weight: 500;
+}
+
+/* Utilities */
+.admin-section {
+    padding: 2rem;
+    background-color: var(--fresh-cream);
+}
+
+.admin-card {
+    background-color: var(--cloud-white);
+    border-radius: 8px;
+    border: none;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.admin-card .card-header {
+    background-color: var(--midnight);
+    color: var(--cloud-white);
+    border-radius: 8px 8px 0 0;
+    padding: 1rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .admin-sidebar {
+        position: fixed;
+        top: 0;
+        left: -100%;
+        width: 80%;
+        height: 100%;
+        z-index: 1000;
+        transition: left 0.3s ease;
+    }
+    
+    .admin-sidebar.show {
+        left: 0;
+    }
+    
+    .admin-header {
+        position: sticky;
+        top: 0;
+        z-index: 999;
+    }
+}
