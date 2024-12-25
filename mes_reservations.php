@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once "includes/config.php";
+require_once "includes/db.php";
 
 // Vérifier si l'utilisateur est connecté
 if(!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true) {
@@ -8,7 +9,7 @@ if(!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true) {
     exit;
 }
 
-$id_client = $_SESSION["id_client"];
+$id_client = $_SESSION["id"];
 
 // Récupérer les réservations de l'utilisateur
 $sql = "SELECT r.*, c.type_chambre, c.prix, h.nom_hotel,
@@ -64,6 +65,17 @@ if($stmt = mysqli_prepare($conn, $sql)) {
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
         <?php endif; ?>
+
+        <?php if(isset($_SESSION['error'])): ?>
+            <div class="alert alert-danger alert-dismissible fade show">
+                <i class="fas fa-exclamation-circle"></i> 
+                <?php 
+                echo $_SESSION['error'];
+                unset($_SESSION['error']);
+                ?>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        <?php endif; ?>
         
         <?php if(mysqli_num_rows($result) > 0): ?>
             <div class="row row-cols-1 row-cols-md-2 g-4">
@@ -113,17 +125,22 @@ if($stmt = mysqli_prepare($conn, $sql)) {
                                     </span>
                                 </div>
                                 
-                                <?php if($reservation['status'] === 'pending'): ?>
-                                    <form action="process_payment.php" method="POST">
-                                        <input type="hidden" name="reservation_id" value="<?php echo $reservation['id_reservation']; ?>">
-                                        <button type="submit" class="btn btn-primary btn-sm">
-                                            <i class="fas fa-credit-card"></i> Payer maintenant
-                                        </button>
-                                    </form>
+                                <?php if($reservation['status'] !== 'confirmed'): ?>
+                                    <div class="mt-3">
+                                        <form method="POST" action="process_payment.php">
+                                            <input type="hidden" name="id_chambre" value="<?php echo $reservation['id_chambre']; ?>">
+                                            <input type="hidden" name="date_arrivee" value="<?php echo $reservation['date_arrivee']; ?>">
+                                            <input type="hidden" name="date_depart" value="<?php echo $reservation['date_depart']; ?>">
+                                            <input type="hidden" name="total_amount" value="<?php echo $prix_total; ?>">
+                                            <button type="submit" class="btn btn-primary">
+                                                <i class="fas fa-credit-card"></i> Payer maintenant
+                                            </button>
+                                        </form>
+                                    </div>
                                 <?php endif; ?>
                             </div>
                             
-                            <?php if($reservation['date_arrivee'] > date('Y-m-d')): ?>
+                            <?php if($reservation['date_arrivee'] > date('Y-m-d') && $reservation['status'] !== 'confirmed'): ?>
                                 <div class="card-footer">
                                     <a href="annuler_reservation.php?id=<?php echo $reservation['id_reservation']; ?>" 
                                        class="btn btn-danger btn-sm w-100"

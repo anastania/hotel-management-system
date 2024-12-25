@@ -111,7 +111,7 @@ $result = mysqli_query($conn, $sql);
                                         <td><?php echo date('d/m/Y', strtotime($reservation['date_arrivee'])); ?></td>
                                         <td><?php echo date('d/m/Y', strtotime($reservation['date_depart'])); ?></td>
                                         <td><?php echo $reservation['duree_sejour']; ?> nuits</td>
-                                        <td><?php echo number_format($reservation['prix'], 2); ?> €</td>
+                                        <td><?php echo number_format(floatval($reservation['prix'] ?? 0), 2); ?> €</td>
                                         <td>
                                             <a href="edit_reservation.php?id=<?php echo $reservation['id_reservation']; ?>" 
                                                class="btn btn-sm btn-primary">

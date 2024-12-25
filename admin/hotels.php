@@ -2,9 +2,9 @@
 session_start();
 require_once "../includes/config.php";
 
-// Vérifier si l'admin est connecté
-if(!isset($_SESSION["admin_loggedin"]) || $_SESSION["admin_loggedin"] !== true){
-    header("location: login.php");
+// Check if user is logged in and is an admin
+if (!isset($_SESSION["admin_loggedin"]) || $_SESSION["admin_loggedin"] !== true) {
+    header("location: ../login.php");
     exit;
 }
 
@@ -38,26 +38,41 @@ if(isset($_GET["delete"]) && !empty($_GET["delete"])){
     exit();
 }
 
-// Récupérer tous les hôtels
+// Get all hotels with room counts
 $sql = "SELECT h.*, COUNT(c.id_chambre) as nb_chambres 
         FROM hotels h 
         LEFT JOIN chambres c ON h.id_hotel = c.id_hotel 
         GROUP BY h.id_hotel 
-        ORDER BY h.nom_hotel";
+        ORDER BY h.id_hotel";
 $result = mysqli_query($conn, $sql);
 ?>
 
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <?php 
-    $page_title = "Gestion des Hôtels";
-    include '../includes/head.php'; 
-    ?>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion des Hôtels - Administration</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <style>
+        .hotel-image {
+            max-width: 150px;
+            height: auto;
+            border-radius: 5px;
+        }
+        .actions {
+            white-space: nowrap;
+        }
+    </style>
 </head>
 <body>
-    <?php include '../includes/admin_header.php'; ?>
-    
+    <?php include 'admin_header.php'; ?>
+
     <div class="container-fluid">
         <div class="row">
             <?php include '../includes/admin_sidebar.php'; ?>
@@ -102,6 +117,7 @@ $result = mysqli_query($conn, $sql);
                                 <thead>
                                     <tr>
                                         <th><i class="fas fa-hashtag"></i> ID</th>
+                                        <th><i class="fas fa-image"></i> Image</th>
                                         <th><i class="fas fa-hotel"></i> Nom</th>
                                         <th><i class="fas fa-map-marker-alt"></i> Adresse</th>
                                         <th><i class="fas fa-phone"></i> Téléphone</th>
@@ -112,16 +128,21 @@ $result = mysqli_query($conn, $sql);
                                 <tbody>
                                     <?php while($hotel = mysqli_fetch_assoc($result)): ?>
                                     <tr>
-                                        <td><?php echo $hotel['id_hotel']; ?></td>
-                                        <td><?php echo htmlspecialchars($hotel['nom_hotel']); ?></td>
-                                        <td><?php echo htmlspecialchars($hotel['adresse']); ?></td>
-                                        <td><?php echo htmlspecialchars($hotel['telephone']); ?></td>
+                                        <td><?php echo htmlspecialchars((string)$hotel['id_hotel']); ?></td>
+                                        <td>
+                                            <img src="<?php echo htmlspecialchars((string)($hotel['image_url'] ?? '../assets/img/hotel-placeholder.jpg')); ?>" 
+                                                 alt="<?php echo htmlspecialchars((string)$hotel['nom_hotel']); ?>"
+                                                 class="hotel-image">
+                                        </td>
+                                        <td><?php echo htmlspecialchars((string)$hotel['nom_hotel']); ?></td>
+                                        <td><?php echo htmlspecialchars((string)$hotel['adresse']); ?></td>
+                                        <td><?php echo htmlspecialchars((string)$hotel['telephone']); ?></td>
                                         <td>
                                             <span class="badge bg-info">
                                                 <?php echo $hotel['nb_chambres']; ?> chambres
                                             </span>
                                         </td>
-                                        <td>
+                                        <td class="actions">
                                             <button onclick="editHotel(<?php echo $hotel['id_hotel']; ?>)" 
                                                     class="btn btn-sm btn-primary">
                                                 <i class="fas fa-edit"></i>
@@ -233,7 +254,9 @@ $result = mysqli_query($conn, $sql);
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- jQuery first, then Bootstrap Bundle with Popper -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         function confirmDelete(id) {
             if(confirm('Êtes-vous sûr de vouloir supprimer cet hôtel ?')) {

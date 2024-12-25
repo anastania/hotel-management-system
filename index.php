@@ -61,6 +61,10 @@ $result = mysqli_query($conn, $sql);
             color: var(--forest-green);
             margin-bottom: 1rem;
         }
+        
+        .search-box {
+            margin-bottom: 2rem;
+        }
     </style>
 </head>
 <body>
@@ -70,6 +74,14 @@ $result = mysqli_query($conn, $sql);
         <div class="container">
             <h1 class="display-4 mb-4">Bienvenue à l'Hôtel de Luxe</h1>
             <p class="lead mb-4">Découvrez le confort et l'élégance dans nos chambres soigneusement aménagées</p>
+            <div class="search-box">
+                <form action="chambres.php" method="GET">
+                    <input type="text" name="city" placeholder="Nom de la ville" required style="padding: 0.5rem; border: 1px solid var(--sky-blue); border-radius: 4px;">
+                    <input type="date" name="checkin_date" required style="padding: 0.5rem; border: 1px solid var(--sky-blue); border-radius: 4px;">
+                    <input type="date" name="checkout_date" required style="padding: 0.5rem; border: 1px solid var(--sky-blue); border-radius: 4px;">
+                    <button type="submit" style="padding: 0.5rem 1rem; background-color: var(--forest-green); color: white; border: none; border-radius: 4px;">Rechercher</button>
+                </form>
+            </div>
             <a href="chambres.php" class="btn btn-primary btn-lg">
                 <i class="fas fa-bed"></i> Découvrir nos chambres
             </a>

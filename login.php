@@ -24,6 +24,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 if(mysqli_num_rows($result) == 1) {
                     $row = mysqli_fetch_array($result);
                     if(password_verify($password, $row['password'])) {
+                        // Set admin session variables
+                        session_regenerate_id();
                         $_SESSION["admin_loggedin"] = true;
                         $_SESSION["admin_id"] = $row['id_admin'];
                         $_SESSION["admin_username"] = $row['username'];
@@ -49,6 +51,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 if(mysqli_num_rows($result) == 1) {
                     $row = mysqli_fetch_array($result);
                     if(password_verify($password, $row['password'])) {
+                        // Set client session variables
+                        session_regenerate_id();
                         $_SESSION["loggedin"] = true;
                         $_SESSION["id_client"] = $row['id_client'];
                         $_SESSION["client_name"] = $row['nom'];

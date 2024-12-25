@@ -14,63 +14,74 @@ if (!isset($_SESSION['user_id'])) {
 // Si on a des données de réservation
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $id_chambre = $_POST['id_chambre'];
+    $id_client = $_SESSION['user_id']; 
     $date_arrivee = $_POST['date_arrivee'];
     $date_depart = $_POST['date_depart'];
     $nombre_personnes = $_POST['nombre_personnes'];
     
-    // Récupérer le prix de la chambre
-    $stmt = $conn->prepare("SELECT prix_par_nuit FROM chambres WHERE id_chambre = ?");
+    // Check room availability
+    $stmt = $conn->prepare("SELECT disponible FROM chambres WHERE id_chambre = ?");
     $stmt->execute([$id_chambre]);
     $chambre = $stmt->fetch();
     
-    // Calculer le nombre de nuits
-    $date1 = new DateTime($date_arrivee);
-    $date2 = new DateTime($date_depart);
-    $interval = $date1->diff($date2);
-    $nombre_nuits = $interval->days;
-    
-    // Calculer le prix total
-    $prix_total = $chambre['prix_par_nuit'] * $nombre_nuits;
-    
-    // Créer la réservation
-    $stmt = $conn->prepare("INSERT INTO reservations (id_utilisateur, id_chambre, date_arrivee, date_depart, nombre_personnes, prix_total, status) 
-                           VALUES (?, ?, ?, ?, ?, ?, 'pending')");
-    $stmt->execute([$_SESSION['user_id'], $id_chambre, $date_arrivee, $date_depart, $nombre_personnes, $prix_total]);
-    
-    $_SESSION['last_reservation_id'] = $conn->lastInsertId();
-    
-    // Initialiser le service de paiement PayPal
-    $paymentService = new PaymentService(
-        PAYPAL_CLIENT_ID,
-        PAYPAL_CLIENT_SECRET,
-        PAYPAL_MODE,
-        PAYPAL_CURRENCY
-    );
-    
-    try {
-        // Créer le paiement PayPal
-        $payment = $paymentService->createPayment(
-            $prix_total,
-            "Réservation chambre d'hôtel #" . $_SESSION['last_reservation_id'],
-            PAYPAL_RETURN_URL,
-            PAYPAL_CANCEL_URL
+    if ($chambre['disponible'] == 1) {
+        // Récupérer le prix de la chambre
+        $stmt = $conn->prepare("SELECT prix_par_nuit FROM chambres WHERE id_chambre = ?");
+        $stmt->execute([$id_chambre]);
+        $chambre = $stmt->fetch();
+        
+        // Calculer le nombre de nuits
+        $date1 = new DateTime($date_arrivee);
+        $date2 = new DateTime($date_depart);
+        $interval = $date1->diff($date2);
+        $nombre_nuits = $interval->days;
+        
+        // Calculer le prix total
+        $prix_total = $chambre['prix_par_nuit'] * $nombre_nuits;
+        
+        // Créer la réservation
+        $stmt = $conn->prepare("INSERT INTO reservations (id_utilisateur, id_chambre, date_arrivee, date_depart, nombre_personnes, prix_total, status) 
+                               VALUES (?, ?, ?, ?, ?, ?, 'pending')");
+        $stmt->execute([$_SESSION['user_id'], $id_chambre, $date_arrivee, $date_depart, $nombre_personnes, $prix_total]);
+        
+        $reservation_id = $conn->lastInsertId();
+        
+        // Create payment
+        $paymentService = new PaymentService(
+            PAYPAL_CLIENT_ID,
+            PAYPAL_CLIENT_SECRET,
+            PAYPAL_MODE,
+            PAYPAL_CURRENCY
         );
         
-        // Enregistrer les détails du paiement
-        $stmt = $conn->prepare("INSERT INTO payments (id_reservation, amount, status) VALUES (?, ?, 'pending')");
-        $stmt->execute([$_SESSION['last_reservation_id'], $prix_total]);
-        
-        // Rediriger vers PayPal
-        foreach($payment->links as $link) {
-            if($link->rel === 'approval_url') {
-                header('Location: ' . $link->href);
-                exit();
+        try {
+            $payment = $paymentService->createPayment(
+                $prix_total,
+                "Réservation chambre d'hôtel #" . $reservation_id,
+                PAYPAL_RETURN_URL,
+                PAYPAL_CANCEL_URL
+            );
+            
+            // Enregistrer les détails du paiement
+            $stmt = $conn->prepare("INSERT INTO payments (id_reservation, amount, status) VALUES (?, ?, 'pending')");
+            $stmt->execute([$reservation_id, $prix_total]);
+            
+            // Redirect to PayPal
+            foreach($payment->links as $link) {
+                if($link->rel === 'approval_url') {
+                    header('Location: ' . $link->href);
+                    exit();
+                }
             }
+            
+        } catch (Exception $e) {
+            $_SESSION['error'] = "Erreur lors de la création du paiement: " . $e->getMessage();
+            header('Location: error.php');
+            exit();
         }
-        
-    } catch (Exception $e) {
-        $_SESSION['error'] = "Erreur lors de la création du paiement: " . $e->getMessage();
-        header('Location: error.php');
+    } else {
+        $_SESSION['error'] = "La chambre n'est pas disponible pour ces dates.";
+        header('Location: mes_reservations.php');
         exit();
     }
 }

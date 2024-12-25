@@ -1,63 +1,35 @@
+<?php
+if(!isset($_SESSION["admin_loggedin"]) || $_SESSION["admin_loggedin"] !== true) {
+    header("location: ../login.php");
+    exit;
+}
+?>
+
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
     <div class="container-fluid">
         <a class="navbar-brand" href="index.php">
-            <i class="fas fa-hotel"></i> 
-            Administration
+            <i class="fas fa-hotel"></i> Administration
         </a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
         </button>
+        
         <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav me-auto">
-                <li class="nav-item">
-                    <a class="nav-link" href="index.php">
-                        <i class="fas fa-tachometer-alt"></i> 
-                        Tableau de bord
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="hotels.php">
-                        <i class="fas fa-hotel"></i> 
-                        Hôtels
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="chambres.php">
-                        <i class="fas fa-bed"></i> 
-                        Chambres
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="reservations.php">
-                        <i class="fas fa-calendar-check"></i> 
-                        Réservations
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="clients.php">
-                        <i class="fas fa-users"></i> 
-                        Clients
-                    </a>
-                </li>
-            </ul>
-            <ul class="navbar-nav">
+            <ul class="navbar-nav ms-auto">
                 <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
-                        <i class="fas fa-user-circle"></i> 
-                        <?php echo htmlspecialchars($_SESSION['admin_username']); ?>
+                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-user-circle"></i> <?php echo htmlspecialchars($_SESSION["admin_username"]); ?>
                     </a>
-                    <ul class="dropdown-menu dropdown-menu-end">
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
                         <li>
                             <a class="dropdown-item" href="parametres.php">
-                                <i class="fas fa-cog"></i> 
-                                Paramètres
+                                <i class="fas fa-cog"></i> Paramètres
                             </a>
                         </li>
                         <li><hr class="dropdown-divider"></li>
                         <li>
-                            <a class="dropdown-item" href="logout.php">
-                                <i class="fas fa-sign-out-alt"></i> 
-                                Déconnexion
+                            <a class="dropdown-item" href="../logout.php">
+                                <i class="fas fa-sign-out-alt"></i> Déconnexion
                             </a>
                         </li>
                     </ul>
@@ -66,3 +38,30 @@
         </div>
     </div>
 </nav>
+
+<!-- Alert container for messages -->
+<div class="container mt-3">
+    <?php if (isset($_SESSION['success'])): ?>
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <?php 
+                echo $_SESSION['success'];
+                unset($_SESSION['success']);
+            ?>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    <?php endif; ?>
+
+    <?php if (isset($_SESSION['error'])): ?>
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <?php 
+                echo $_SESSION['error'];
+                unset($_SESSION['error']);
+            ?>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    <?php endif; ?>
+</div>
+
+<!-- Add Bootstrap JS and Popper.js -->
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"></script>

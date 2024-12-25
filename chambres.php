@@ -2,11 +2,86 @@
 session_start();
 require_once "includes/config.php";
 
-// Récupérer toutes les chambres avec les détails de l'hôtel
-$sql = "SELECT c.*, h.nom_hotel, h.adresse 
+// Get search parameters
+$search_city = isset($_GET['city']) ? trim($_GET['city']) : '';
+$check_in = isset($_GET['checkin_date']) ? $_GET['checkin_date'] : '';
+$check_out = isset($_GET['checkout_date']) ? $_GET['checkout_date'] : '';
+
+// Current date for comparing with reservation end dates
+$current_date = date('Y-m-d');
+
+// Update reservation status for completed stays
+$update_sql = "UPDATE reservations 
+               SET status = 'completed' 
+               WHERE date_depart < ? 
+               AND status = 'confirmed'";
+$update_stmt = mysqli_prepare($conn, $update_sql);
+mysqli_stmt_bind_param($update_stmt, "s", $current_date);
+mysqli_stmt_execute($update_stmt);
+
+// Base query to get available rooms
+$sql = "SELECT c.*, h.nom_hotel, h.adresse, h.image_url 
         FROM chambres c 
-        JOIN hotels h ON c.id_hotel = h.id_hotel";
-$result = mysqli_query($conn, $sql);
+        JOIN hotels h ON c.id_hotel = h.id_hotel
+        WHERE 1=1";
+
+$params = array();
+$types = "";
+
+// Add city filter if provided
+if (!empty($search_city)) {
+    $sql .= " AND h.nom_hotel LIKE ?";
+    $params[] = "%$search_city%";
+    $types .= "s";
+}
+
+// Add date availability check if dates are provided
+if (!empty($check_in) && !empty($check_out)) {
+    // Check if the room is not already booked for the requested dates
+    $sql .= " AND c.id_chambre NOT IN (
+        SELECT r.id_chambre 
+        FROM reservations r 
+        WHERE r.status IN ('confirmed', 'pending') 
+        AND (
+            (r.date_arrivee <= ? AND r.date_depart >= ?) 
+            OR (r.date_arrivee <= ? AND r.date_depart >= ?)
+            OR (r.date_arrivee >= ? AND r.date_depart <= ?)
+        )
+    )";
+    $params[] = $check_out;
+    $params[] = $check_in;
+    $params[] = $check_in;
+    $params[] = $check_in;
+    $params[] = $check_in;
+    $params[] = $check_out;
+    $types .= "ssssss";
+} else {
+    // If no dates provided, exclude rooms that are currently occupied
+    $sql .= " AND c.id_chambre NOT IN (
+        SELECT r.id_chambre 
+        FROM reservations r 
+        WHERE r.status IN ('confirmed', 'pending')
+        AND r.date_arrivee <= ? 
+        AND r.date_depart >= ?
+    )";
+    $params[] = $current_date;
+    $params[] = $current_date;
+    $types .= "ss";
+}
+
+// Add ordering
+$sql .= " ORDER BY h.nom_hotel, c.prix";
+
+// Prepare and execute the query
+$stmt = mysqli_prepare($conn, $sql);
+if (!empty($params)) {
+    mysqli_stmt_bind_param($stmt, $types, ...$params);
+}
+mysqli_stmt_execute($stmt);
+$result = mysqli_stmt_get_result($stmt);
+
+// Check if any rooms were found
+$rooms_found = mysqli_num_rows($result) > 0;
 ?>
 
 <!DOCTYPE html>
@@ -18,6 +93,7 @@ $result = mysqli_query($conn, $sql);
         .hotel-card {
             transition: transform 0.3s ease;
             margin-bottom: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
         .hotel-card:hover {
             transform: translateY(-5px);
@@ -32,6 +108,35 @@ $result = mysqli_query($conn, $sql);
             color: #28a745;
             font-weight: bold;
         }
+        .search-form {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+        .hotel-name {
+            font-size: 1.2rem;
+            color: #333;
+            margin-bottom: 0.5rem;
+        }
+        .room-type {
+            color: #666;
+            font-size: 1rem;
+        }
+        .card-body {
+            padding: 1.5rem;
+        }
+        .room-status {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            padding: 5px 10px;
+            border-radius: 15px;
+            color: white;
+            font-weight: bold;
+            background-color: #28a745;
+        }
     </style>
 </head>
 <body>
@@ -41,22 +146,78 @@ $result = mysqli_query($conn, $sql);
         <h1 class="text-center mb-4">
             <i class="fas fa-bed"></i> Nos Chambres
         </h1>
+
+        <!-- Search Form -->
+        <div class="search-form">
+            <form method="GET" class="row g-3">
+                <div class="col-md-4">
+                    <label for="city" class="form-label">Ville</label>
+                    <select class="form-select" id="city" name="city">
+                        <option value="">Toutes les villes</option>
+                        <?php
+                        // Get unique cities from hotel names
+                        $cities_query = "SELECT DISTINCT nom_hotel FROM hotels ORDER BY nom_hotel";
+                        $cities_result = mysqli_query($conn, $cities_query);
+                        while ($row = mysqli_fetch_assoc($cities_result)) {
+                            $hotel_name = $row['nom_hotel'];
+                            // Extract city name from hotel name
+                            $city = preg_replace('/^.*\s([\w-]+)$/', '$1', $hotel_name);
+                            echo '<option value="' . htmlspecialchars($city) . '"' . 
+                                 ($search_city == $city ? ' selected' : '') . '>' . 
+                                 htmlspecialchars($city) . '</option>';
+                        }
+                        ?>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="checkin_date" class="form-label">Date d'arrivée</label>
+                    <input type="date" class="form-control" id="checkin_date" name="checkin_date" 
+                           value="<?php echo $check_in; ?>" min="<?php echo date('Y-m-d'); ?>">
+                </div>
+                <div class="col-md-3">
+                    <label for="checkout_date" class="form-label">Date de départ</label>
+                    <input type="date" class="form-control" id="checkout_date" name="checkout_date" 
+                           value="<?php echo $check_out; ?>" min="<?php echo date('Y-m-d'); ?>">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">&nbsp;</label>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-search"></i> Rechercher
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <?php if (!empty($search_city) && !$rooms_found): ?>
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i> 
+                Aucune chambre disponible à <?php echo htmlspecialchars($search_city); ?> 
+                <?php if (!empty($check_in) && !empty($check_out)): ?>
+                    pour la période du <?php echo date('d/m/Y', strtotime($check_in)); ?> 
+                    au <?php echo date('d/m/Y', strtotime($check_out)); ?>
+                <?php endif; ?>
+            </div>
+        <?php endif; ?>
         
         <div class="row">
-            <?php while($chambre = mysqli_fetch_assoc($result)): ?>
+            <?php while($chambre = mysqli_fetch_assoc($result)): 
+                // Extract city from hotel name
+                $hotel_name = $chambre['nom_hotel'];
+                $city = preg_replace('/^.*\s([\w-]+)$/', '$1', $hotel_name);
+            ?>
                 <div class="col-md-4">
                     <div class="card hotel-card">
-                        <img src="pictures/<?php echo strtolower($chambre['type_chambre']); ?>.jpg" 
+                        <div class="room-status">Disponible</div>
+                        <img src="<?php echo htmlspecialchars($chambre['image_url']); ?>" 
                              class="card-img-top" 
-                             alt="<?php echo htmlspecialchars($chambre['type_chambre']); ?>"
-                             onerror="this.src='pictures/default-room.jpg'">
+                             alt="<?php echo htmlspecialchars($chambre['nom_hotel']); ?>"
+                             onerror="this.src='https://images.unsplash.com/photo-1566665797739-1674de7a421a'">
                         <div class="card-body">
-                            <h5 class="card-title">
-                                <?php echo htmlspecialchars($chambre['type_chambre']); ?>
-                            </h5>
-                            <h6 class="card-subtitle mb-2 text-muted">
-                                <i class="fas fa-hotel"></i> 
+                            <h5 class="hotel-name">
                                 <?php echo htmlspecialchars($chambre['nom_hotel']); ?>
+                            </h5>
+                            <h6 class="room-type text-muted">
+                                <?php echo htmlspecialchars($chambre['type_chambre']); ?>
                             </h6>
                             <p class="card-text">
                                 <i class="fas fa-map-marker-alt"></i> 
@@ -69,12 +230,15 @@ $result = mysqli_query($conn, $sql);
                                 <?php echo number_format($chambre['prix'], 2); ?> € / nuit
                             </p>
                             <?php if(isset($_SESSION["loggedin"]) && $_SESSION["loggedin"] === true): ?>
-                                <a href="chambre_details.php?id=<?php echo $chambre['id_chambre']; ?>" 
-                                   class="btn btn-primary btn-block">
+                                <a href="chambre_details.php?id=<?php echo $chambre['id_chambre']; ?><?php 
+                                    echo (!empty($check_in) ? '&checkin_date=' . urlencode($check_in) : ''); 
+                                    echo (!empty($check_out) ? '&checkout_date=' . urlencode($check_out) : ''); 
+                                    ?>" 
+                                   class="btn btn-primary w-100">
                                     <i class="fas fa-calendar-plus"></i> Réserver maintenant
                                 </a>
                             <?php else: ?>
-                                <a href="login.php" class="btn btn-secondary btn-block">
+                                <a href="login.php" class="btn btn-secondary w-100">
                                     <i class="fas fa-sign-in-alt"></i> Connectez-vous pour réserver
                                 </a>
                             <?php endif; ?>
@@ -86,5 +250,11 @@ $result = mysqli_query($conn, $sql);
     </div>
 
     <?php include 'includes/footer.php'; ?>
+    <script>
+        // Add date validation
+        document.getElementById('checkin_date').addEventListener('change', function() {
+            document.getElementById('checkout_date').min = this.value;
+        });
+    </script>
 </body>
 </html>
