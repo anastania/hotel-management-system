@@ -2,13 +2,27 @@
 session_start();
 require_once "includes/config.php";
 
-// Récupérer les chambres en vedette
-$sql = "SELECT c.*, h.nom_hotel 
+// Récupérer les chambres en vedette avec toutes les informations nécessaires
+$sql = "SELECT c.id_chambre, c.type_chambre, c.prix, c.nombre_lits, c.disponibilite,
+        h.nom_hotel, h.ville
         FROM chambres c 
         JOIN hotels h ON c.id_hotel = h.id_hotel 
         WHERE c.disponibilite = 1 
-        LIMIT 3";
+        LIMIT 6";
 $result = mysqli_query($conn, $sql);
+
+// Vérifier s'il y a une erreur dans la requête
+if (!$result) {
+    error_log("Erreur MySQL: " . mysqli_error($conn));
+}
+
+// Tableau d'images par défaut
+$default_images = [
+    'assets/pictures/g1.jpg',
+    'assets/pictures/g2.jpg',
+    'assets/pictures/g3.jpg',
+    'assets/pictures/hotel1.jpg'
+];
 ?>
 
 <!DOCTYPE html>
@@ -20,24 +34,151 @@ $result = mysqli_query($conn, $sql);
     ?>
     <style>
         .hero-section {
-            background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('assets/pictures/hotel1.jpg');
+            background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('assets/pictures/hotel1.jpg');
             background-size: cover;
             background-position: center;
-            height: 60vh;
+            min-height: 80vh;
             display: flex;
             align-items: center;
             justify-content: center;
             color: white;
             text-align: center;
-            margin-bottom: 3rem;
             position: relative;
-            overflow: hidden;
         }
         
         .hero-content {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+            background-color: rgba(0, 0, 0, 0.5);
+            border-radius: 10px;
+            backdrop-filter: blur(5px);
             opacity: 0;
             transform: translateY(50px);
             animation: slideUp 1s ease forwards;
+        }
+        
+        .search-box {
+            background-color: rgba(255, 255, 255, 0.95);
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            margin-top: 2rem;
+            opacity: 0;
+            transform: translateY(30px);
+            animation: fadeInUp 1s ease forwards;
+            animation-delay: 0.5s;
+        }
+        
+        .search-form {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .search-form .form-group {
+            flex: 1;
+            min-width: 200px;
+        }
+        
+        .search-form .btn {
+            min-width: 150px;
+        }
+        
+        .featured-rooms {
+            padding: 5rem 0;
+            background-color: #f8f9fa;
+        }
+        
+        .room-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            padding: 2rem 0;
+        }
+        
+        .room-card {
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .room-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.2);
+        }
+        
+        .room-image-container {
+            position: relative;
+            padding-top: 66.67%; /* 3:2 Aspect Ratio */
+            overflow: hidden;
+        }
+        
+        .room-image {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.5s ease;
+        }
+        
+        .room-card:hover .room-image {
+            transform: scale(1.1);
+        }
+        
+        .room-details {
+            padding: 1.5rem;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        
+        .room-price {
+            font-size: 1.25rem;
+            color: var(--forest-green);
+            font-weight: bold;
+            margin: 1rem 0;
+        }
+
+        .room-features {
+            margin: 1rem 0;
+        }
+
+        .room-features p {
+            margin-bottom: 0.5rem;
+            color: #666;
+        }
+
+        .room-actions {
+            margin-top: 1rem;
+        }
+        
+        .section-title {
+            text-align: center;
+            margin-bottom: 3rem;
+            position: relative;
+            padding-bottom: 1rem;
+        }
+        
+        .section-title::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: 3px;
+            background-color: var(--forest-green);
         }
         
         @keyframes slideUp {
@@ -47,14 +188,6 @@ $result = mysqli_query($conn, $sql);
             }
         }
         
-        .search-box {
-            margin-bottom: 2rem;
-            opacity: 0;
-            transform: translateY(30px);
-            animation: fadeInUp 1s ease forwards;
-            animation-delay: 1s;
-        }
-        
         @keyframes fadeInUp {
             to {
                 opacity: 1;
@@ -62,156 +195,22 @@ $result = mysqli_query($conn, $sql);
             }
         }
         
-        .featured-rooms {
-            padding: 3rem 0;
-        }
-        
-        .section-title {
-            position: relative;
-            display: inline-block;
-            margin-bottom: 2rem;
-        }
-        
-        .section-title::after {
-            content: '';
-            position: absolute;
-            width: 0;
-            height: 2px;
-            bottom: -5px;
-            left: 0;
-            background-color: var(--forest-green);
-            animation: lineWidth 1s ease forwards;
-            animation-delay: 0.5s;
-        }
-        
-        @keyframes lineWidth {
-            to {
+        @media (max-width: 768px) {
+            .hero-section {
+                min-height: 60vh;
+            }
+            
+            .search-form {
+                flex-direction: column;
+            }
+            
+            .search-form .form-group {
                 width: 100%;
             }
-        }
-        
-        .room-card {
-            height: 100%;
-            transition: all 0.5s ease;
-            opacity: 0;
-            transform: translateY(30px);
-        }
-        
-        .room-card.animate {
-            opacity: 1;
-            transform: translateY(0);
-        }
-        
-        .room-card:hover {
-            transform: translateY(-10px) scale(1.02);
-            box-shadow: 0 15px 30px rgba(0,0,0,0.1);
-        }
-        
-        .room-image {
-            height: 200px;
-            object-fit: cover;
-            transition: all 0.5s ease;
-        }
-        
-        .room-card:hover .room-image {
-            transform: scale(1.1);
-        }
-        
-        .features-section {
-            background-color: var(--cloud-white);
-            padding: 3rem 0;
-            margin: 3rem 0;
-        }
-        
-        .feature-item {
-            opacity: 0;
-            transform: translateY(30px);
-            transition: all 0.5s ease;
-        }
-        
-        .feature-item.animate {
-            opacity: 1;
-            transform: translateY(0);
-        }
-        
-        .feature-icon {
-            font-size: 2.5rem;
-            color: var(--forest-green);
-            margin-bottom: 1rem;
-            transition: all 0.3s ease;
-        }
-        
-        .feature-item:hover .feature-icon {
-            transform: scale(1.2) rotate(360deg);
-        }
-        
-        .feature-image {
-            transform: scale(0.9);
-            transition: all 0.5s ease;
-        }
-        
-        .feature-item:hover .feature-image {
-            transform: scale(1);
-        }
-        
-        .btn-primary {
-            position: relative;
-            overflow: hidden;
-            transition: all 0.3s ease;
-        }
-        
-        .btn-primary::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-            transition: 0.5s;
-        }
-        
-        .btn-primary:hover::before {
-            left: 100%;
-        }
-        
-        .search-form input, .search-form button {
-            opacity: 0;
-            transform: translateY(20px);
-            animation: formElements 0.5s ease forwards;
-        }
-        
-        .search-form input:nth-child(1) { animation-delay: 0.2s; }
-        .search-form input:nth-child(2) { animation-delay: 0.4s; }
-        .search-form input:nth-child(3) { animation-delay: 0.6s; }
-        .search-form button { animation-delay: 0.8s; }
-        
-        @keyframes formElements {
-            to {
-                opacity: 1;
-                transform: translateY(0);
+            
+            .room-grid {
+                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
             }
-        }
-        
-        .btn:hover {
-            transform: translateY(-2px);
-            transition: transform 0.3s ease;
-        }
-        
-        .feature-icon {
-            transition: transform 0.3s ease;
-        }
-        
-        .feature-icon:hover {
-            transform: scale(1.1) rotate(10deg);
-        }
-        
-        .room-image {
-            transition: transform 0.5s ease;
-        }
-        
-        .room-card:hover .room-image {
-            transform: scale(1.05);
         }
     </style>
 </head>
@@ -221,115 +220,86 @@ $result = mysqli_query($conn, $sql);
     <div class="hero-section">
         <div class="container">
             <div class="hero-content">
-                <h1 class="display-4 mb-4" data-aos="fade-down">Bienvenue à l'Hôtel de Luxe</h1>
-                <p class="lead mb-4" data-aos="fade-up" data-aos-delay="200">Découvrez le confort et l'élégance dans nos chambres soigneusement aménagées</p>
+                <h1 class="display-4 mb-4">Découvrez le confort ultime</h1>
+                <p class="lead mb-4">Réservez votre séjour de rêve dans nos hôtels de luxe</p>
+                
                 <div class="search-box">
-                    <form action="chambres.php" method="GET" class="search-form">
-                        <input type="text" name="city" placeholder="Nom de la ville" required class="form-control mb-2">
-                        <input type="date" name="checkin_date" required class="form-control mb-2">
-                        <input type="date" name="checkout_date" required class="form-control mb-2">
+                    <form action="search.php" method="GET" class="search-form">
+                        <div class="form-group">
+                            <input type="text" name="destination" class="form-control" placeholder="Destination" required>
+                        </div>
+                        <div class="form-group">
+                            <input type="date" name="check_in" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <input type="date" name="check_out" class="form-control" required>
+                        </div>
                         <button type="submit" class="btn btn-primary">Rechercher</button>
                     </form>
                 </div>
-                <a href="chambres.php" class="btn btn-primary btn-lg" data-aos="zoom-in" data-aos-delay="400">
-                    <i class="fas fa-bed"></i> Découvrir nos chambres
-                </a>
             </div>
         </div>
     </div>
 
-    <div class="container">
+    <div class="container-fluid">
         <section class="featured-rooms">
-            <h2 class="text-center mb-4" data-aos="fade-up">
-                <i class="fas fa-star"></i> Chambres en vedette
-            </h2>
-            
-            <div class="row row-cols-1 row-cols-md-3 g-4">
-                <?php 
-                $featured_images = [
-                    'assets/pictures/g1.jpg',
-                    'assets/pictures/g2.jpg',
-                    'assets/pictures/g3.jpg'
-                ];
-                $delay = 0;
-                while($chambre = mysqli_fetch_assoc($result)): 
-                    $current_image = $featured_images[$delay % count($featured_images)];
-                ?>
-                    <div class="col">
-                        <div class="card room-card" data-aos="fade-up" data-aos-delay="<?php echo $delay += 200; ?>">
-                            <img src="<?php echo $current_image; ?>" class="card-img-top room-image" alt="<?php echo htmlspecialchars($chambre['type_chambre']); ?>">
-                            <div class="card-body">
-                                <h5 class="card-title" data-aos="fade-right" data-aos-delay="<?php echo $delay + 100; ?>">
-                                    <i class="fas fa-bed"></i> <?php echo htmlspecialchars($chambre['type_chambre']); ?>
-                                </h5>
-                                <p class="card-text room-features" data-aos="fade-right" data-aos-delay="<?php echo $delay + 200; ?>">
-                                    <i class="fas fa-hotel"></i> <?php echo htmlspecialchars($chambre['nom_hotel']); ?><br>
-                                    <i class="fas fa-bed"></i> <?php echo $chambre['nombre_lits']; ?> lit(s)
-                                </p>
-                                <p class="price" data-aos="fade-up" data-aos-delay="<?php echo $delay + 300; ?>">
-                                    <i class="fas fa-tag"></i> <?php echo number_format($chambre['prix'], 2); ?> € / nuit
-                                </p>
-                                <div class="d-grid gap-2" data-aos="fade-up" data-aos-delay="<?php echo $delay + 400; ?>">
-                                    <a href="chambre_details.php?id=<?php echo $chambre['id_chambre']; ?>" class="btn btn-outline-primary">
-                                        <i class="fas fa-info-circle"></i> Voir plus
-                                    </a>
-                                    <?php if(isset($_SESSION["loggedin"]) && $_SESSION["loggedin"] === true): ?>
-                                        <a href="reservation.php?chambre=<?php echo $chambre['id_chambre']; ?>" class="btn btn-primary">
-                                            <i class="fas fa-calendar-plus"></i> Réserver
+            <div class="container">
+                <h2 class="section-title">Chambres en vedette</h2>
+                <div class="room-grid">
+                    <?php
+                    if ($result && mysqli_num_rows($result) > 0) {
+                        $image_index = 0;
+                        while ($row = mysqli_fetch_assoc($result)) {
+                            // Utiliser une image par défaut de manière cyclique
+                            $image = $default_images[$image_index % count($default_images)];
+                            $image_index++;
+                            ?>
+                            <div class="room-card">
+                                <div class="room-image-container">
+                                    <img src="<?php echo htmlspecialchars($image); ?>" alt="<?php echo htmlspecialchars($row['type_chambre']); ?>" class="room-image">
+                                </div>
+                                <div class="room-details">
+                                    <div>
+                                        <h3><?php echo htmlspecialchars($row['type_chambre']); ?></h3>
+                                        <p class="text-muted">
+                                            <i class="fas fa-hotel"></i> <?php echo htmlspecialchars($row['nom_hotel']); ?><br>
+                                            <i class="fas fa-map-marker-alt"></i> <?php echo htmlspecialchars($row['ville']); ?>
+                                        </p>
+                                        <div class="room-features">
+                                            <p><i class="fas fa-bed"></i> <?php echo htmlspecialchars($row['nombre_lits']); ?> lit(s)</p>
+                                        </div>
+                                        <div class="room-price">
+                                            <i class="fas fa-tag"></i> <?php echo number_format($row['prix'], 2); ?> € / nuit
+                                        </div>
+                                    </div>
+                                    <div class="room-actions">
+                                        <a href="chambre_details.php?id=<?php echo $row['id_chambre']; ?>" class="btn btn-primary w-100">
+                                            <i class="fas fa-info-circle"></i> Voir les détails
                                         </a>
-                                    <?php else: ?>
-                                        <a href="login.php?redirect=index.php" class="btn btn-secondary">
-                                            <i class="fas fa-sign-in-alt"></i> Connectez-vous pour réserver
-                                        </a>
-                                    <?php endif; ?>
+                                        <?php if(isset($_SESSION["loggedin"]) && $_SESSION["loggedin"] === true): ?>
+                                            <a href="reservation.php?chambre=<?php echo $row['id_chambre']; ?>" class="btn btn-success mt-2 w-100">
+                                                <i class="fas fa-calendar-plus"></i> Réserver
+                                            </a>
+                                        <?php endif; ?>
+                                    </div>
                                 </div>
                             </div>
+                            <?php
+                        }
+                    } else {
+                        ?>
+                        <div class="alert alert-info text-center w-100">
+                            <i class="fas fa-info-circle"></i> Aucune chambre disponible pour le moment.
                         </div>
-                    </div>
-                <?php endwhile; ?>
-            </div>
-            
-            <div class="text-center mt-4" data-aos="fade-up" data-aos-delay="600">
-                <a href="chambres.php" class="btn btn-primary btn-lg">
-                    <i class="fas fa-th-list"></i> Voir toutes nos chambres
-                </a>
-            </div>
-        </section>
-
-        <section class="features-section">
-            <div class="container">
-                <h2 class="text-center mb-4" data-aos="fade-up">Nos Services</h2>
-                <div class="row text-center">
-                    <div class="col-md-4 mb-4" data-aos="fade-up" data-aos-delay="200">
-                        <div class="feature-item">
-                            <div class="feature-icon">
-                                <i class="fas fa-wifi"></i>
-                            </div>
-                            <h3>WiFi Gratuit</h3>
-                            <p>Restez connecté pendant votre séjour</p>
-                            <img src="assets/pictures/food.jpg" class="img-fluid rounded feature-image" alt="WiFi">
-                        </div>
-                    </div>
-                    <div class="col-md-4 mb-4" data-aos="fade-up" data-aos-delay="400">
-                        <div class="feature-item">
-                            <div class="feature-icon">
-                                <i class="fas fa-utensils"></i>
-                            </div>
-                            <h3>Restaurant</h3>
-                            <p>Savourez notre cuisine raffinée</p>
-                            <img src="assets/pictures/swimingpool.jpg" class="img-fluid rounded feature-image" alt="Restaurant">
-                        </div>
-                    </div>
-                    <div class="col-md-4 mb-4" data-aos="fade-up" data-aos-delay="600">
-                        <div class="feature-item">
-                            <div class="feature-icon">
-                                <i class="fas fa-spa"></i>
-                            </div>
-                            <h3>Spa & Bien-être</h3>
-                            <p>Détendez-vous dans notre espace bien-être</p>
-                            <img src="assets/pictures/spa.jpg" class="img-fluid rounded feature-image" alt="Spa">
-                        </div>
-                    </div>
+                        <?php
+                    }
+                    ?>
+                </div>
+                
+                <div class="text-center mt-4">
+                    <a href="chambres.php" class="btn btn-primary btn-lg">
+                        <i class="fas fa-th-list"></i> Voir toutes nos chambres
+                    </a>
                 </div>
             </div>
         </section>
@@ -338,30 +308,14 @@ $result = mysqli_query($conn, $sql);
     <?php include 'includes/footer.php'; ?>
     
     <script>
-        // Initialize AOS
-        AOS.init({
-            duration: 800,
-            easing: 'ease-out',
-            once: true
-        });
+        // Set minimum date for check-in and check-out
+        const today = new Date().toISOString().split('T')[0];
+        document.querySelector('input[name="check_in"]').min = today;
+        document.querySelector('input[name="check_out"]').min = today;
         
-        // Add animation class to room cards when they come into view
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    entry.target.classList.add('animate');
-                }
-            });
-        }, {
-            threshold: 0.1
-        });
-        
-        document.querySelectorAll('.room-card, .feature-item').forEach((el) => observer.observe(el));
-        
-        // Add date validation
-        document.querySelector('input[name="checkin_date"]').min = new Date().toISOString().split('T')[0];
-        document.querySelector('input[name="checkin_date"]').addEventListener('change', function() {
-            document.querySelector('input[name="checkout_date"]').min = this.value;
+        // Update check-out minimum date when check-in is selected
+        document.querySelector('input[name="check_in"]').addEventListener('change', function() {
+            document.querySelector('input[name="check_out"]').min = this.value;
         });
     </script>
 </body>
