@@ -47,7 +47,7 @@ if($stmt = mysqli_prepare($conn, $sql)) {
                 <p class="lead"><?php echo $hotel['adresse']; ?></p>
                 
                 <div class="mb-4">
-                    <img src="images/hotels/<?php echo $hotel['id_hotel']; ?>.jpg" class="img-fluid rounded" alt="<?php echo $hotel['nom_hotel']; ?>">
+                    <?php display_hotel_gallery($hotel['id_hotel'], $conn); ?>
                 </div>
                 
                 <div class="mb-4">

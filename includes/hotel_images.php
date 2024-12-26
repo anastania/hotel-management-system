@@ -188,4 +188,70 @@ function get_hotel_image($hotel_id, $type = 'main', $subtype = null) {
     
     return null;
 }
+
+function get_hotel_images($id_hotel, $conn) {
+    $sql = "SELECT * FROM hotel_images WHERE id_hotel = ? ORDER BY is_primary DESC";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("i", $id_hotel);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    $images = array();
+    while($row = $result->fetch_assoc()) {
+        $images[] = $row;
+    }
+    
+    return $images;
+}
+
+function get_primary_image($id_hotel, $conn) {
+    $sql = "SELECT image_url FROM hotel_images WHERE id_hotel = ? AND is_primary = 1 LIMIT 1";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("i", $id_hotel);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    if($row = $result->fetch_assoc()) {
+        return $row['image_url'];
+    }
+    
+    return 'images/hotel-default.jpg';
+}
+
+function display_hotel_gallery($id_hotel, $conn) {
+    $images = get_hotel_images($id_hotel, $conn);
+    if(empty($images)) {
+        echo '<img src="images/hotel-default.jpg" class="img-fluid rounded" alt="Default Hotel Image">';
+        return;
+    }
+    
+    echo '<div id="hotelCarousel" class="carousel slide" data-bs-ride="carousel">';
+    
+    // Indicators
+    echo '<div class="carousel-indicators">';
+    foreach($images as $key => $image) {
+        $active = $key === 0 ? 'active' : '';
+        echo "<button type='button' data-bs-target='#hotelCarousel' data-bs-slide-to='$key' class='$active'></button>";
+    }
+    echo '</div>';
+    
+    // Slides
+    echo '<div class="carousel-inner">';
+    foreach($images as $key => $image) {
+        $active = $key === 0 ? 'active' : '';
+        echo "<div class='carousel-item $active'>";
+        echo "<img src='{$image['image_url']}' class='d-block w-100 rounded' alt='Hotel Image'>";
+        echo '</div>';
+    }
+    echo '</div>';
+    
+    // Controls
+    echo '<button class="carousel-control-prev" type="button" data-bs-target="#hotelCarousel" data-bs-slide="prev">';
+    echo '<span class="carousel-control-prev-icon"></span>';
+    echo '</button>';
+    echo '<button class="carousel-control-next" type="button" data-bs-target="#hotelCarousel" data-bs-slide="next">';
+    echo '<span class="carousel-control-next-icon"></span>';
+    echo '</button>';
+    echo '</div>';
+}
 ?>

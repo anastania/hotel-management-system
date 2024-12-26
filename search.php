@@ -107,10 +107,10 @@ $result = mysqli_stmt_get_result($stmt);
                 <?php while($hotel = mysqli_fetch_assoc($result)): ?>
                     <div class="col-md-4 mb-4">
                         <div class="card hotel-card">
-                            <img src="images/hotels/<?php echo $hotel['id_hotel']; ?>.jpg" 
+                            <img src="<?php echo get_primary_image($hotel['id_hotel'], $conn); ?>" 
                                  class="card-img-top" 
                                  alt="<?php echo htmlspecialchars($hotel['nom_hotel']); ?>"
-                                 onerror="this.src='images/hotel-default.jpg'">
+                                 style="height: 200px; object-fit: cover;">
                             <div class="card-body">
                                 <h5 class="card-title"><?php echo htmlspecialchars($hotel['nom_hotel']); ?></h5>
                                 <p class="card-text"><?php echo substr(htmlspecialchars($hotel['description']), 0, 100); ?>...</p>

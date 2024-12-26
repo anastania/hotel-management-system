@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once "includes/config.php";
+require_once "includes/hotel_images.php";
 
 // Get search parameters
 $search_city = isset($_GET['city']) ? trim($_GET['city']) : '';
@@ -20,7 +21,12 @@ mysqli_stmt_bind_param($update_stmt, "s", $current_date);
 mysqli_stmt_execute($update_stmt);
 
 // Base query to get available rooms
-$sql = "SELECT c.*, h.nom_hotel, h.adresse, h.image_url 
+$sql = "SELECT c.*, h.nom_hotel, h.adresse,
+        COALESCE((SELECT hi.image_url 
+                  FROM hotel_images hi 
+                  WHERE hi.id_hotel = h.id_hotel 
+                  ORDER BY hi.is_primary DESC, hi.id_image 
+                  LIMIT 1), 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800') as image_url
         FROM chambres c 
         JOIN hotels h ON c.id_hotel = h.id_hotel
         WHERE 1=1";
@@ -138,6 +144,7 @@ $rooms_found = mysqli_num_rows($result) > 0;
             background-color: #28a745;
         }
     </style>
+    <link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
 </head>
 <body>
     <?php include 'includes/header.php'; ?>
@@ -200,32 +207,40 @@ $rooms_found = mysqli_num_rows($result) > 0;
         <?php endif; ?>
         
         <div class="row">
-            <?php while($chambre = mysqli_fetch_assoc($result)): 
+            <?php $counter = 0; while($chambre = mysqli_fetch_assoc($result)): 
                 // Extract city from hotel name
                 $hotel_name = $chambre['nom_hotel'];
                 $city = preg_replace('/^.*\s([\w-]+)$/', '$1', $hotel_name);
+                $delay = ($counter++ % 3) * 100; // Add delay for staggered animation
             ?>
                 <div class="col-md-4">
-                    <div class="card hotel-card">
+                    <div class="card hotel-card" data-aos="fade-up" data-aos-delay="<?php echo $delay; ?>">
                         <div class="room-status">Disponible</div>
-                        <img src="<?php echo htmlspecialchars($chambre['image_url']); ?>" 
-                             class="card-img-top" 
-                             alt="<?php echo htmlspecialchars($chambre['nom_hotel']); ?>"
-                             onerror="this.src='https://images.unsplash.com/photo-1566665797739-1674de7a421a'">
+                        <?php
+                        // Get room image from hotel_images or fallback
+                        $room_image = !empty($chambre['image_url']) ? $chambre['image_url'] : 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800';
+                        ?>
+                        <div class="card-img-wrapper">
+                            <img src="<?php echo htmlspecialchars($room_image); ?>" 
+                                 class="card-img-top" 
+                                 alt="<?php echo htmlspecialchars($chambre['nom_hotel']); ?>"
+                                 onerror="this.src='https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800'"
+                                 loading="lazy">
+                        </div>
                         <div class="card-body">
-                            <h5 class="hotel-name">
+                            <h5 class="hotel-name" data-aos="fade-right" data-aos-delay="<?php echo $delay + 100; ?>">
                                 <?php echo htmlspecialchars($chambre['nom_hotel']); ?>
                             </h5>
-                            <h6 class="room-type text-muted">
+                            <h6 class="room-type text-muted" data-aos="fade-right" data-aos-delay="<?php echo $delay + 200; ?>">
                                 <?php echo htmlspecialchars($chambre['type_chambre']); ?>
                             </h6>
-                            <p class="card-text">
+                            <p class="card-text" data-aos="fade-right" data-aos-delay="<?php echo $delay + 300; ?>">
                                 <i class="fas fa-map-marker-alt"></i> 
                                 <?php echo htmlspecialchars($chambre['adresse']); ?><br>
                                 <i class="fas fa-bed"></i> 
                                 <?php echo $chambre['nombre_lits']; ?> lit(s)
                             </p>
-                            <p class="price mb-3">
+                            <p class="price mb-3" data-aos="fade-up" data-aos-delay="<?php echo $delay + 400; ?>">
                                 <i class="fas fa-tag"></i> 
                                 <?php echo number_format($chambre['prix'], 2); ?> € / nuit
                             </p>
@@ -234,7 +249,7 @@ $rooms_found = mysqli_num_rows($result) > 0;
                                     echo (!empty($check_in) ? '&checkin_date=' . urlencode($check_in) : ''); 
                                     echo (!empty($check_out) ? '&checkout_date=' . urlencode($check_out) : ''); 
                                     ?>" 
-                                   class="btn btn-primary w-100">
+                                   class="btn btn-primary w-100" data-aos="fade-up" data-aos-delay="<?php echo $delay + 500; ?>">
                                     <i class="fas fa-calendar-plus"></i> Réserver maintenant
                                 </a>
                             <?php else: ?>
@@ -250,7 +265,9 @@ $rooms_found = mysqli_num_rows($result) > 0;
     </div>
 
     <?php include 'includes/footer.php'; ?>
+    <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
     <script>
+        AOS.init();
         // Add date validation
         document.getElementById('checkin_date').addEventListener('change', function() {
             document.getElementById('checkout_date').min = this.value;

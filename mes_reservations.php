@@ -9,7 +9,13 @@ if(!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true) {
     exit;
 }
 
-$id_client = $_SESSION["id"];
+// Get client ID from session
+if(!isset($_SESSION["id_client"])) {
+    header("location: login.php");
+    exit;
+}
+
+$id_client = $_SESSION["id_client"];
 
 // Récupérer les réservations de l'utilisateur
 $sql = "SELECT r.*, c.type_chambre, c.prix, h.nom_hotel,
