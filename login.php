@@ -79,6 +79,69 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $page_title = "Connexion";
     include 'includes/head.php'; 
     ?>
+    <style>
+        body {
+            background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)),
+                        url('https://images.unsplash.com/photo-1571896349842-33c89424de2d?q=80&w=1920&auto=format&blur=50');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            min-height: 100vh;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+        }
+
+        .card {
+            background-color: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .card-header {
+            background-color: transparent;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .form-control {
+            border-radius: 8px;
+            padding: 12px;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .form-control:focus {
+            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.15);
+        }
+
+        .btn-primary {
+            padding: 12px;
+            border-radius: 8px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .form-check-input:checked {
+            background-color: #0d6efd;
+            border-color: #0d6efd;
+        }
+
+        .alert {
+            border-radius: 8px;
+        }
+
+        .text-center a {
+            color: #0d6efd;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        .text-center a:hover {
+            color: #0a58ca;
+            text-decoration: underline;
+        }
+    </style>
 </head>
 <body>
     <?php include 'includes/header.php'; ?>

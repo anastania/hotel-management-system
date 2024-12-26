@@ -1,0 +1,67 @@
+@font-face {
+    font-family: 'Cormorant';
+    src: url('../fonts/Cormorant-Regular.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Cormorant';
+    src: url('../fonts/Cormorant-SemiBold.ttf') format('truetype');
+    font-weight: 600;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Cormorant';
+    src: url('../fonts/Cormorant-Medium.ttf') format('truetype');
+    font-weight: 500;
+    font-style: normal;
+}
+
+body {
+    font-family: 'Cormorant', serif !important;
+    font-weight: 400;
+}
+
+/* Adjust specific elements that might need different font sizes */
+h1, h2, h3, h4, h5, h6 {
+    font-family: 'Cormorant', serif !important;
+    font-weight: 600;
+}
+
+.navbar-brand {
+    font-family: 'Cormorant', serif !important;
+    font-size: 1.8rem;
+    font-weight: 600;
+}
+
+.nav-link {
+    font-family: 'Cormorant', serif !important;
+    font-size: 1.2rem;
+    font-weight: 500;
+}
+
+.btn {
+    font-family: 'Cormorant', serif !important;
+    font-size: 1.2rem;
+    font-weight: 500;
+}
+
+.form-label {
+    font-family: 'Cormorant', serif !important;
+    font-size: 1.2rem;
+    font-weight: 500;
+}
+
+.card-title {
+    font-family: 'Cormorant', serif !important;
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.dropdown-item {
+    font-family: 'Cormorant', serif !important;
+    font-size: 1.2rem;
+    font-weight: 500;
+}

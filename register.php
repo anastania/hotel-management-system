@@ -55,10 +55,68 @@ if(isset($_POST["register"])) {
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <title>Register - Hotel Reservation</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="css/style.css" rel="stylesheet">
+    <?php 
+    $page_title = "Inscription";
+    include 'includes/head.php'; 
+    ?>
+    <style>
+        body {
+            background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)),
+                        url('https://images.unsplash.com/photo-1571896349842-33c89424de2d?q=80&w=1920&auto=format&blur=50');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            min-height: 100vh;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+        }
+
+        .card {
+            background-color: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .card-header {
+            background-color: transparent;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .form-control {
+            border-radius: 8px;
+            padding: 12px;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .form-control:focus {
+            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.15);
+        }
+
+        .btn-primary {
+            padding: 12px;
+            border-radius: 8px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .alert {
+            border-radius: 8px;
+        }
+
+        .text-center a {
+            color: #0d6efd;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        .text-center a:hover {
+            color: #0a58ca;
+            text-decoration: underline;
+        }
+    </style>
 </head>
 <body>
     <?php include 'includes/header.php'; ?>
@@ -67,43 +125,68 @@ if(isset($_POST["register"])) {
         <div class="row justify-content-center">
             <div class="col-md-6">
                 <div class="card">
-                    <div class="card-header">
-                        <h3 class="text-center">Inscription</h3>
+                    <div class="card-header text-center">
+                        <h2>
+                            <i class="fas fa-user-plus"></i> Inscription
+                        </h2>
                     </div>
                     <div class="card-body">
-                        <?php 
-                        if(!empty($register_err)){
-                            echo '<div class="alert alert-danger">';
-                            echo '<p>' . $register_err . '</p>';
-                            echo '</div>';
-                        }        
-                        ?>
+                        <?php if(!empty($register_err)): ?>
+                            <div class="alert alert-danger">
+                                <i class="fas fa-exclamation-circle"></i> <?php echo $register_err; ?>
+                            </div>
+                        <?php endif; ?>
+
                         <form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" method="post">
-                            <div class="form-group mb-3">
-                                <label>Nom</label>
-                                <input type="text" name="nom" class="form-control" required>
+                            <div class="mb-3">
+                                <label for="nom" class="form-label">
+                                    <i class="fas fa-user"></i> Nom
+                                </label>
+                                <input type="text" class="form-control" id="nom" name="nom" required>
                             </div>
-                            <div class="form-group mb-3">
-                                <label>Email</label>
-                                <input type="email" name="email" class="form-control" required>
+
+                            <div class="mb-3">
+                                <label for="adresse" class="form-label">
+                                    <i class="fas fa-map-marker-alt"></i> Adresse
+                                </label>
+                                <textarea class="form-control" id="adresse" name="adresse" required></textarea>
                             </div>
-                            <div class="form-group mb-3">
-                                <label>Mot de passe</label>
-                                <input type="password" name="password" class="form-control" required>
+
+                            <div class="mb-3">
+                                <label for="email" class="form-label">
+                                    <i class="fas fa-envelope"></i> Email
+                                </label>
+                                <input type="email" class="form-control" id="email" name="email" required>
                             </div>
-                            <div class="form-group mb-3">
-                                <label>Adresse</label>
-                                <textarea name="adresse" class="form-control" required></textarea>
+
+                            <div class="mb-3">
+                                <label for="telephone" class="form-label">
+                                    <i class="fas fa-phone"></i> Téléphone
+                                </label>
+                                <input type="tel" class="form-control" id="telephone" name="telephone" required>
                             </div>
-                            <div class="form-group mb-3">
-                                <label>Téléphone</label>
-                                <input type="tel" name="telephone" class="form-control" required>
+
+                            <div class="mb-3">
+                                <label for="password" class="form-label">
+                                    <i class="fas fa-lock"></i> Mot de passe
+                                </label>
+                                <input type="password" class="form-control" id="password" name="password" required>
                             </div>
-                            <div class="form-group mb-3">
-                                <input type="submit" name="register" class="btn btn-primary w-100" value="S'inscrire">
+
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-primary" name="register">
+                                    <i class="fas fa-user-plus"></i> S'inscrire
+                                </button>
                             </div>
-                            <p>Déjà inscrit? <a href="login.php">Se connecter ici</a>.</p>
                         </form>
+
+                        <div class="text-center mt-3">
+                            <p>Déjà inscrit ? 
+                                <a href="login.php">
+                                    <i class="fas fa-sign-in-alt"></i> Connectez-vous
+                                </a>
+                            </p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -111,6 +194,5 @@ if(isset($_POST["register"])) {
     </div>
 
     <?php include 'includes/footer.php'; ?>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

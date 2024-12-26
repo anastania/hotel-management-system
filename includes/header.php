@@ -20,7 +20,7 @@ if (session_status() === PHP_SESSION_NONE) {
     <link rel="stylesheet" href="/Gestion_reservation_hotel/assets/css/style.css">
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-light">
+    <nav class="navbar navbar-expand-lg navbar-light sticky-top">
         <div class="container">
             <a class="navbar-brand" href="/Gestion_reservation_hotel/index.php">
                 <i class="fas fa-hotel"></i> Hôtel de Luxe
@@ -65,12 +65,12 @@ if (session_status() === PHP_SESSION_NONE) {
                         </li>
                     <?php elseif(isset($_SESSION["admin_loggedin"]) && $_SESSION["admin_loggedin"] === true): ?>
                         <li class="nav-item">
-                            <a class="nav-link" href="/Gestion_reservation_hotel/admin/index.php">
-                                <i class="fas fa-cog"></i> Administration
+                            <a class="nav-link" href="/Gestion_reservation_hotel/admin/">
+                                <i class="fas fa-user-shield"></i> Administration
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="/Gestion_reservation_hotel/admin/logout.php">
+                            <a class="nav-link" href="/Gestion_reservation_hotel/logout.php">
                                 <i class="fas fa-sign-out-alt"></i> Déconnexion
                             </a>
                         </li>
@@ -90,3 +90,10 @@ if (session_status() === PHP_SESSION_NONE) {
             </div>
         </div>
     </nav>
+
+    <style>
+    .navbar.sticky-top {
+        background-color: #fff;
+        box-shadow: 0 2px 4px rgba(0,0,0,.1);
+    }
+    </style>
