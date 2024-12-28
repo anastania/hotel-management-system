@@ -19,7 +19,12 @@ $id_client = $_SESSION["id_client"];
 
 // Récupérer les réservations de l'utilisateur
 $sql = "SELECT r.*, c.type_chambre, c.prix, h.nom_hotel,
-        DATEDIFF(r.date_depart, r.date_arrivee) as nombre_nuits
+        DATEDIFF(r.date_depart, r.date_arrivee) as nombre_nuits,
+        COALESCE((SELECT hi.image_url 
+                  FROM hotel_images hi 
+                  WHERE hi.id_hotel = h.id_hotel 
+                  ORDER BY hi.is_primary DESC, hi.id_image 
+                  LIMIT 1), 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800') as hotel_image
         FROM reservations r 
         JOIN chambres c ON r.id_chambre = c.id_chambre 
         JOIN hotels h ON c.id_hotel = h.id_hotel 
@@ -43,6 +48,7 @@ if($stmt = mysqli_prepare($conn, $sql)) {
     <style>
         .reservation-card {
             transition: transform 0.2s;
+            overflow: hidden;
         }
         .reservation-card:hover {
             transform: translateY(-5px);
@@ -50,6 +56,35 @@ if($stmt = mysqli_prepare($conn, $sql)) {
         .price-details {
             font-size: 0.9em;
             color: #666;
+        }
+        .hotel-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-top-left-radius: calc(0.375rem - 1px);
+            border-top-right-radius: calc(0.375rem - 1px);
+            transition: transform 0.3s ease;
+        }
+        .hotel-image:hover {
+            transform: scale(1.05);
+        }
+        .card-header {
+            background-color: transparent;
+            border-bottom: none;
+            padding-top: 1rem;
+        }
+        .reservation-status {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 1;
+        }
+        .badge {
+            font-size: 0.85em;
+            padding: 0.5em 0.8em;
+        }
+        .card-body {
+            position: relative;
         }
     </style>
 </head>
@@ -90,13 +125,26 @@ if($stmt = mysqli_prepare($conn, $sql)) {
                 ?>
                     <div class="col">
                         <div class="card reservation-card h-100">
+                            <img src="<?php echo htmlspecialchars($reservation['hotel_image']); ?>" 
+                                 class="hotel-image" 
+                                 alt="<?php echo htmlspecialchars($reservation['nom_hotel']); ?>"
+                                 onerror="this.src='https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800'">
+                            
                             <div class="card-header">
                                 <h5 class="card-title mb-0">
                                     <i class="fas fa-hotel"></i> 
                                     <?php echo htmlspecialchars($reservation['nom_hotel']); ?>
                                 </h5>
                             </div>
+                            
                             <div class="card-body">
+                                <div class="reservation-status">
+                                    <span class="badge bg-<?php echo $reservation['status'] == 'confirmed' ? 'success' : 'warning'; ?>">
+                                        <i class="fas fa-<?php echo $reservation['status'] == 'confirmed' ? 'check' : 'clock'; ?>"></i>
+                                        <?php echo $reservation['status'] == 'confirmed' ? 'Confirmée' : 'En attente'; ?>
+                                    </span>
+                                </div>
+
                                 <div class="mb-3">
                                     <p class="mb-1">
                                         <i class="fas fa-bed"></i> 
@@ -124,37 +172,25 @@ if($stmt = mysqli_prepare($conn, $sql)) {
                                     </p>
                                 </div>
                                 
-                                <div class="mt-3">
-                                    <span class="badge bg-<?php echo $reservation['status'] == 'confirmed' ? 'success' : 'warning'; ?>">
-                                        <i class="fas fa-<?php echo $reservation['status'] == 'confirmed' ? 'check' : 'clock'; ?>"></i>
-                                        <?php echo $reservation['status'] == 'confirmed' ? 'Confirmée' : 'En attente'; ?>
-                                    </span>
-                                </div>
-                                
                                 <?php if($reservation['status'] !== 'confirmed'): ?>
-                                    <div class="mt-3">
-                                        <form method="POST" action="process_payment.php">
-                                            <input type="hidden" name="id_chambre" value="<?php echo $reservation['id_chambre']; ?>">
-                                            <input type="hidden" name="date_arrivee" value="<?php echo $reservation['date_arrivee']; ?>">
-                                            <input type="hidden" name="date_depart" value="<?php echo $reservation['date_depart']; ?>">
+                                    <div class="mt-3 d-flex gap-2">
+                                        <form method="POST" action="process_payment_simple.php" class="me-2">
+                                            <input type="hidden" name="id_reservation" value="<?php echo $reservation['id_reservation']; ?>">
                                             <input type="hidden" name="total_amount" value="<?php echo $prix_total; ?>">
                                             <button type="submit" class="btn btn-primary">
                                                 <i class="fas fa-credit-card"></i> Payer maintenant
                                             </button>
                                         </form>
+                                        
+                                        <form method="POST" action="cancel_reservation.php" onsubmit="return confirm('Êtes-vous sûr de vouloir annuler cette réservation ?');">
+                                            <input type="hidden" name="id_reservation" value="<?php echo $reservation['id_reservation']; ?>">
+                                            <button type="submit" class="btn btn-outline-danger">
+                                                <i class="fas fa-times"></i> Annuler
+                                            </button>
+                                        </form>
                                     </div>
                                 <?php endif; ?>
                             </div>
-                            
-                            <?php if($reservation['date_arrivee'] > date('Y-m-d') && $reservation['status'] !== 'confirmed'): ?>
-                                <div class="card-footer">
-                                    <a href="annuler_reservation.php?id=<?php echo $reservation['id_reservation']; ?>" 
-                                       class="btn btn-danger btn-sm w-100"
-                                       onclick="return confirm('Êtes-vous sûr de vouloir annuler cette réservation ?')">
-                                        <i class="fas fa-times"></i> Annuler la réservation
-                                    </a>
-                                </div>
-                            <?php endif; ?>
                         </div>
                     </div>
                 <?php endwhile; ?>

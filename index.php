@@ -163,6 +163,20 @@ $default_images = [
             margin-top: 1rem;
         }
         
+        .room-actions .btn {
+            font-size: 0.95rem;
+            padding: 0.5rem 1rem;
+        }
+        
+        .room-actions .btn-outline-primary {
+            background-color: white;
+        }
+        
+        .room-actions .btn-outline-primary:hover {
+            background-color: var(--primary);
+            color: white;
+        }
+        
         .section-title {
             text-align: center;
             margin-bottom: 3rem;
@@ -224,15 +238,15 @@ $default_images = [
                 <p class="lead mb-4">Réservez votre séjour de rêve dans nos hôtels de luxe</p>
                 
                 <div class="search-box">
-                    <form action="search.php" method="GET" class="search-form">
+                    <form action="search.php" method="GET" class="search-form" id="searchForm">
                         <div class="form-group">
                             <input type="text" name="destination" class="form-control" placeholder="Destination" required>
                         </div>
                         <div class="form-group">
-                            <input type="date" name="check_in" class="form-control" required>
+                            <input type="date" name="check_in" id="check_in" class="form-control" required>
                         </div>
                         <div class="form-group">
-                            <input type="date" name="check_out" class="form-control" required>
+                            <input type="date" name="check_out" id="check_out" class="form-control" required>
                         </div>
                         <button type="submit" class="btn btn-primary">Rechercher</button>
                     </form>
@@ -273,12 +287,21 @@ $default_images = [
                                         </div>
                                     </div>
                                     <div class="room-actions">
-                                        <a href="chambre_details.php?id=<?php echo $row['id_chambre']; ?>" class="btn btn-primary w-100">
-                                            <i class="fas fa-info-circle"></i> Voir les détails
-                                        </a>
                                         <?php if(isset($_SESSION["loggedin"]) && $_SESSION["loggedin"] === true): ?>
-                                            <a href="reservation.php?chambre=<?php echo $row['id_chambre']; ?>" class="btn btn-success mt-2 w-100">
-                                                <i class="fas fa-calendar-plus"></i> Réserver
+                                            <div class="d-flex gap-2">
+                                                <a href="chambre_details.php?id=<?php echo $row['id_chambre']; ?>" class="btn btn-outline-primary flex-grow-1">
+                                                    <i class="fas fa-info-circle"></i> Détails
+                                                </a>
+                                                <form method="POST" action="process_reservation.php" class="flex-grow-1">
+                                                    <input type="hidden" name="id_chambre" value="<?php echo $row['id_chambre']; ?>">
+                                                    <button type="submit" class="btn btn-primary w-100">
+                                                        <i class="fas fa-calendar-plus"></i> Réserver
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        <?php else: ?>
+                                            <a href="chambre_details.php?id=<?php echo $row['id_chambre']; ?>" class="btn btn-primary w-100">
+                                                <i class="fas fa-info-circle"></i> Voir les détails
                                             </a>
                                         <?php endif; ?>
                                     </div>
@@ -310,12 +333,40 @@ $default_images = [
     <script>
         // Set minimum date for check-in and check-out
         const today = new Date().toISOString().split('T')[0];
-        document.querySelector('input[name="check_in"]').min = today;
-        document.querySelector('input[name="check_out"]').min = today;
+        const checkInInput = document.getElementById('check_in');
+        const checkOutInput = document.getElementById('check_out');
+        
+        // Set minimum dates
+        checkInInput.min = today;
+        checkOutInput.min = today;
         
         // Update check-out minimum date when check-in is selected
-        document.querySelector('input[name="check_in"]').addEventListener('change', function() {
-            document.querySelector('input[name="check_out"]').min = this.value;
+        checkInInput.addEventListener('change', function() {
+            const checkInDate = new Date(this.value);
+            const nextDay = new Date(checkInDate);
+            nextDay.setDate(nextDay.getDate() + 1);
+            
+            // Format the date to YYYY-MM-DD
+            const nextDayFormatted = nextDay.toISOString().split('T')[0];
+            
+            // Update check-out minimum date
+            checkOutInput.min = nextDayFormatted;
+            
+            // If current check-out date is before new minimum, update it
+            if (checkOutInput.value && new Date(checkOutInput.value) <= checkInDate) {
+                checkOutInput.value = nextDayFormatted;
+            }
+        });
+        
+        // Form validation
+        document.getElementById('searchForm').addEventListener('submit', function(e) {
+            const checkIn = new Date(checkInInput.value);
+            const checkOut = new Date(checkOutInput.value);
+            
+            if (checkOut <= checkIn) {
+                e.preventDefault();
+                alert('La date de départ doit être au moins un jour après la date d\'arrivée.');
+            }
         });
     </script>
 </body>

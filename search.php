@@ -3,9 +3,38 @@ session_start();
 require_once "includes/config.php";
 require_once "includes/hotel_images.php";
 
+// Validate input parameters
 $destination = isset($_GET['destination']) ? trim($_GET['destination']) : '';
-$check_in = isset($_GET['check_in']) ? $_GET['check_in'] : '';
-$check_out = isset($_GET['check_out']) ? $_GET['check_out'] : '';
+$check_in = isset($_GET['check_in']) ? trim($_GET['check_in']) : '';
+$check_out = isset($_GET['check_out']) ? trim($_GET['check_out']) : '';
+
+// Validate dates
+$errors = [];
+
+// Check if dates are valid
+if (!empty($check_in) && !empty($check_out)) {
+    $check_in_date = new DateTime($check_in);
+    $check_out_date = new DateTime($check_out);
+    $today = new DateTime();
+    $today->setTime(0, 0, 0); // Reset time part to compare dates only
+
+    // Validate check-in date
+    if ($check_in_date < $today) {
+        $errors[] = "La date d'arrivée ne peut pas être dans le passé.";
+    }
+
+    // Validate check-out date
+    if ($check_out_date <= $check_in_date) {
+        $errors[] = "La date de départ doit être au moins un jour après la date d'arrivée.";
+    }
+}
+
+// If there are errors, redirect back with error message
+if (!empty($errors)) {
+    $_SESSION['search_error'] = implode('<br>', $errors);
+    header("Location: index.php");
+    exit;
+}
 
 // Current date for comparing with reservation end dates
 $current_date = date('Y-m-d');

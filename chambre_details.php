@@ -58,6 +58,9 @@ if($_SERVER["REQUEST_METHOD"] == "POST"){
         $date_debut_err = "Veuillez entrer une date de début.";
     } else {
         $date_debut = trim($_POST["date_debut"]);
+        if(strtotime($date_debut) < strtotime(date("Y-m-d"))){
+            $date_debut_err = "La date d'arrivée ne peut pas être dans le passé.";
+        }
     }
     
     // Valider la date de fin
@@ -65,6 +68,9 @@ if($_SERVER["REQUEST_METHOD"] == "POST"){
         $date_fin_err = "Veuillez entrer une date de fin.";
     } else {
         $date_fin = trim($_POST["date_fin"]);
+        if(strtotime($date_fin) <= strtotime($date_debut)){
+            $date_fin_err = "La date de départ doit être au moins un jour après la date d'arrivée.";
+        }
     }
     
     // Vérifier les erreurs avant d'insérer dans la base de données
@@ -233,11 +239,31 @@ if($_SERVER["REQUEST_METHOD"] == "POST"){
     <?php include 'includes/footer.php'; ?>
     
     <script>
-    flatpickr("#date_debut, #date_fin", {
+    const dateDebutPicker = flatpickr("#date_debut", {
         locale: "fr",
         dateFormat: "Y-m-d",
         minDate: "today",
         defaultDate: "today",
+        allowInput: true,
+        onChange: function(selectedDates, dateStr) {
+            // Update the min date of checkout to be the day after check-in
+            const nextDay = new Date(selectedDates[0]);
+            nextDay.setDate(nextDay.getDate() + 1);
+            dateFinPicker.set('minDate', nextDay);
+            
+            // If current checkout date is before or equal to check-in, update it
+            const currentCheckout = dateFinPicker.selectedDates[0];
+            if (!currentCheckout || currentCheckout <= selectedDates[0]) {
+                dateFinPicker.setDate(nextDay);
+            }
+        }
+    });
+
+    const dateFinPicker = flatpickr("#date_fin", {
+        locale: "fr",
+        dateFormat: "Y-m-d",
+        minDate: new Date().fp_incr(1), // Tomorrow
+        defaultDate: new Date().fp_incr(1),
         allowInput: true
     });
 
@@ -247,11 +273,22 @@ if($_SERVER["REQUEST_METHOD"] == "POST"){
     const checkOut = urlParams.get('check_out');
     
     if (checkIn) {
-        document.getElementById('date_debut').value = checkIn;
+        dateDebutPicker.setDate(checkIn);
     }
     if (checkOut) {
-        document.getElementById('date_fin').value = checkOut;
+        dateFinPicker.setDate(checkOut);
     }
+
+    // Form validation
+    document.querySelector('form').addEventListener('submit', function(e) {
+        const dateDebut = new Date(document.getElementById('date_debut').value);
+        const dateFin = new Date(document.getElementById('date_fin').value);
+        
+        if (dateFin <= dateDebut) {
+            e.preventDefault();
+            alert('La date de départ doit être au moins un jour après la date d\'arrivée.');
+        }
+    });
     </script>
 </body>
 </html>

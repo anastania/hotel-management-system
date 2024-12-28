@@ -1,64 +1,78 @@
 <?php
 namespace App;
 
+use PayPal\Rest\ApiContext;
+use PayPal\Auth\OAuthTokenCredential;
 use PayPal\Api\Amount;
+use PayPal\Api\Details;
+use PayPal\Api\Item;
+use PayPal\Api\ItemList;
 use PayPal\Api\Payer;
 use PayPal\Api\Payment;
 use PayPal\Api\RedirectUrls;
 use PayPal\Api\Transaction;
-use PayPal\Api\PaymentExecution;
-use PayPal\Rest\ApiContext;
-use PayPal\Auth\OAuthTokenCredential;
 use Exception;
 
 class PaymentService {
     private $apiContext;
-    private $currency;
 
-    public function __construct($clientId, $clientSecret, $mode = 'sandbox', $currency = 'EUR') {
+    public function __construct($clientId, $clientSecret, $mode = 'sandbox') {
+        // Load the PayPal SDK
+        require_once __DIR__ . '/../vendor/autoload.php';
+
+        // Create API context
         $this->apiContext = new ApiContext(
             new OAuthTokenCredential($clientId, $clientSecret)
         );
 
+        // Set config
         $this->apiContext->setConfig([
             'mode' => $mode,
             'log.LogEnabled' => true,
-            'log.FileName' => '../PayPal.log',
-            'log.LogLevel' => 'DEBUG'
+            'log.FileName' => __DIR__ . '/../logs/PayPal.log',
+            'log.LogLevel' => 'DEBUG',
+            'cache.enabled' => false
         ]);
-
-        $this->currency = $currency;
     }
 
     public function createPayment($amount, $description, $returnUrl, $cancelUrl) {
         try {
+            // Create new payment
+            $payment = new Payment();
+
+            // Set payment method
             $payer = new Payer();
-            $payer->setPaymentMethod('paypal');
+            $payer->setPaymentMethod("paypal");
 
-            $amountDetails = new Amount();
-            $amountDetails->setTotal(number_format($amount, 2, '.', ''))
-                         ->setCurrency($this->currency);
-
-            $transaction = new Transaction();
-            $transaction->setAmount($amountDetails)
-                       ->setDescription($description);
-
+            // Set redirect URLs
             $redirectUrls = new RedirectUrls();
             $redirectUrls->setReturnUrl($returnUrl)
                         ->setCancelUrl($cancelUrl);
 
-            $payment = new Payment();
-            $payment->setIntent('sale')
+            // Set transaction amount
+            $amountDetails = new Amount();
+            $amountDetails->setCurrency("EUR")
+                         ->setTotal($amount);
+
+            // Create transaction
+            $transaction = new Transaction();
+            $transaction->setAmount($amountDetails)
+                       ->setDescription($description);
+
+            // Build payment
+            $payment->setIntent("sale")
                    ->setPayer($payer)
-                   ->setTransactions([$transaction])
-                   ->setRedirectUrls($redirectUrls);
+                   ->setRedirectUrls($redirectUrls)
+                   ->setTransactions(array($transaction));
 
-            $payment->create($this->apiContext);
-            return $payment;
-
-        } catch (Exception $e) {
-            error_log("Erreur PayPal lors de la création du paiement: " . $e->getMessage());
-            throw new Exception("Erreur lors de la création du paiement PayPal: " . $e->getMessage());
+            try {
+                $payment->create($this->apiContext);
+                return $payment;
+            } catch (\Exception $ex) {
+                throw new Exception("Erreur lors de la création du paiement: " . $ex->getMessage());
+            }
+        } catch (\Exception $ex) {
+            throw new Exception("Erreur lors de la préparation du paiement: " . $ex->getMessage());
         }
     }
 
@@ -71,11 +85,8 @@ class PaymentService {
 
             $result = $payment->execute($execution, $this->apiContext);
             return $result;
-
-        } catch (Exception $e) {
-            error_log("Erreur PayPal lors de l'exécution du paiement: " . $e->getMessage());
-            throw new Exception("Erreur lors de l'exécution du paiement PayPal: " . $e->getMessage());
+        } catch (\Exception $ex) {
+            throw new Exception("Erreur lors de l'exécution du paiement: " . $ex->getMessage());
         }
     }
 }
-?>
